@@ -1,0 +1,44 @@
+# ChampUTM - Backend Dependencies
+
+# Web Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-multipart>=0.0.6
+
+# PostgreSQL
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+alembic>=1.13.0
+
+# Validation & Serialization
+pydantic[email]>=2.5.0
+pydantic-settings>=2.1.0
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt==4.0.1
+
+# HTTP Client
+httpx>=0.26.0
+
+# Redis (caching)
+redis>=5.0.0
+
+# Async support
+anyio>=4.2.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Email validation
+email-validator>=2.0.0
+
+# Rate limiting
+slowapi>=0.1.0
+
+# CSV processing (for bulk generator)
+pandas>=2.0.0
+
+# Timezone support
+pytz>=2024.1
