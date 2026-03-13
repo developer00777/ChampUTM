@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.user import User
 from app.core.security import get_password_hash, verify_password
@@ -104,14 +105,20 @@ class UserService:
         action: str = "complete",
     ) -> None:
         """Update a user's onboarding progress."""
-        progress = user.onboarding_progress or {"completed_tours": [], "skipped_tours": []}
+        existing = user.onboarding_progress or {"completed_tours": [], "skipped_tours": []}
+        # Make a deep copy so SQLAlchemy detects the mutation
+        progress = {
+            "completed_tours": list(existing.get("completed_tours", [])),
+            "skipped_tours": list(existing.get("skipped_tours", [])),
+        }
 
-        if action == "complete" and tour_id not in progress.get("completed_tours", []):
-            progress.setdefault("completed_tours", []).append(tour_id)
-        elif action == "skip" and tour_id not in progress.get("skipped_tours", []):
-            progress.setdefault("skipped_tours", []).append(tour_id)
+        if action == "complete" and tour_id not in progress["completed_tours"]:
+            progress["completed_tours"].append(tour_id)
+        elif action == "skip" and tour_id not in progress["skipped_tours"]:
+            progress["skipped_tours"].append(tour_id)
 
         user.onboarding_progress = progress
+        flag_modified(user, "onboarding_progress")
         await session.flush()
 
     async def update_profile(

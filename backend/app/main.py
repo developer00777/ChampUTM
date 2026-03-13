@@ -20,7 +20,7 @@ from app.services.user_service import user_service
 from app.middleware.rate_limit import setup_rate_limiting
 
 # Import routers
-from app.api.v1 import auth, health
+from app.api.v1 import auth, health, utm_router, tracking_router
 
 
 @asynccontextmanager
@@ -142,6 +142,8 @@ async def root():
 # Include routers
 app.include_router(health.router)  # Health check at /health (no /api/v1 prefix)
 app.include_router(auth.router, prefix=settings.api_v1_prefix)
+app.include_router(utm_router, prefix=settings.api_v1_prefix)
+app.include_router(tracking_router)  # /r/{short_code} at root (no /api/v1 prefix)
 
 
 if __name__ == "__main__":

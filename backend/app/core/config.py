@@ -49,8 +49,10 @@ class Settings(BaseSettings):
         """Build PostgreSQL async connection URL."""
         if self.database_url:
             url = self.database_url
-            # Railway provides postgresql://, SQLAlchemy async needs postgresql+asyncpg://
-            if url.startswith("postgresql://"):
+            # Railway may provide postgres:// or postgresql://, normalize to asyncpg scheme
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            elif url.startswith("postgresql://"):
                 url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
             return url
         return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
