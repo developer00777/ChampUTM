@@ -49,7 +49,7 @@ services:
     build:
       context: ./frontend
       args:
-        VITE_API_URL: ""
+        VITE_API_URL: ""   # empty = relative URLs, nginx.local.conf proxies to backend
     restart: unless-stopped
     ports:
       - "3000:80"
