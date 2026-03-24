@@ -8,6 +8,7 @@ export function useUTMLinks(offset = 0, limit = 50) {
   return useQuery({
     queryKey: [QUERY_KEY, offset, limit],
     queryFn: () => listUTMLinks(offset, limit),
+    refetchInterval: 30_000, // poll every 30s to pick up live click counts
   })
 }
 

@@ -25,4 +25,5 @@ async def redirect_short_link(
     destination_url = await utm_service.record_click(session, short_code, request)
     if destination_url is None:
         raise HTTPException(status_code=404, detail="Short link not found")
+    await session.commit()
     return RedirectResponse(url=destination_url, status_code=302)
