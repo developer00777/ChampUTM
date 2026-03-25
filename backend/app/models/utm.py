@@ -9,6 +9,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
@@ -73,7 +74,10 @@ class ClickEvent(Base):
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)  # IPv6 safe
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
     referrer: Mapped[str | None] = mapped_column(Text, nullable=True)
-    country: Mapped[str | None] = mapped_column(String(2), nullable=True)   # ISO 3166-1
+    country: Mapped[str | None] = mapped_column(String(2), nullable=True)    # ISO 3166-1 alpha-2
+    region: Mapped[str | None] = mapped_column(String(100), nullable=True)  # e.g. "California"
+    city: Mapped[str | None] = mapped_column(String(100), nullable=True)    # e.g. "San Francisco"
+    is_vpn: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False)
     device_type: Mapped[str | None] = mapped_column(String(50), nullable=True)  # desktop/mobile/tablet/bot
     browser: Mapped[str | None] = mapped_column(String(100), nullable=True)
 

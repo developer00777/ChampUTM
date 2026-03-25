@@ -65,7 +65,7 @@ export function LinkAnalyticsPage() {
       {data && (
         <>
           {/* Stats */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
             <StatCard
               label="Total Clicks"
               value={data.total_clicks}
@@ -85,6 +85,15 @@ export function LinkAnalyticsPage() {
               label="Avg Clicks / Day"
               value={Math.round(data.total_clicks / Math.max(data.days, 1))}
               description={`Over ${data.days} days`}
+            />
+            <StatCard
+              label="VPN Traffic"
+              value={data.vpn_clicks}
+              description={
+                data.total_clicks > 0
+                  ? `${Math.round((data.vpn_clicks / data.total_clicks) * 100)}% of total`
+                  : 'No clicks yet'
+              }
             />
           </div>
 
@@ -117,6 +126,9 @@ export function LinkAnalyticsPage() {
             <DeviceBarChart data={data.clicks_by_device} title="By Device" />
             <DeviceBarChart data={data.clicks_by_browser} title="By Browser" />
           </div>
+
+          {/* Country */}
+          <DeviceBarChart data={data.clicks_by_country} title="By Country" />
         </>
       )}
     </div>

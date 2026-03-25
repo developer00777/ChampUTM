@@ -30,3 +30,9 @@ email-validator>=2.0.0
 
 # Rate limiting
 slowapi>=0.1.0
+
+# IP Geolocation (MaxMind GeoLite2)
+geoip2>=4.8.0
+
+# Async HTTP client (VPN detection via ip-api.com)
+httpx>=0.27.0

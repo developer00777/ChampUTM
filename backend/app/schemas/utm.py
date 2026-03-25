@@ -70,9 +70,11 @@ class AnalyticsResponse(BaseModel):
     clicks_by_medium: list[ClicksByDimension]
     clicks_by_device: list[ClicksByDimension]
     clicks_by_browser: list[ClicksByDimension]
+    clicks_by_country: list[ClicksByDimension]
     total_clicks: int
     unique_visitors: int
     total_links: int
+    vpn_clicks: int
     days: int
 
 
@@ -81,6 +83,8 @@ class LinkAnalyticsResponse(BaseModel):
     clicks_over_time: list[ClicksOverTime]
     clicks_by_device: list[ClicksByDimension]
     clicks_by_browser: list[ClicksByDimension]
+    clicks_by_country: list[ClicksByDimension]
     total_clicks: int
     unique_visitors: int
+    vpn_clicks: int
     days: int

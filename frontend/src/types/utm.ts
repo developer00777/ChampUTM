@@ -49,9 +49,11 @@ export interface AnalyticsData {
   clicks_by_medium: ClicksByDimension[]
   clicks_by_device: ClicksByDimension[]
   clicks_by_browser: ClicksByDimension[]
+  clicks_by_country: ClicksByDimension[]
   total_clicks: number
   unique_visitors: number
   total_links: number
+  vpn_clicks: number
   days: number
 }
 
@@ -60,7 +62,9 @@ export interface LinkAnalyticsData {
   clicks_over_time: ClicksOverTime[]
   clicks_by_device: ClicksByDimension[]
   clicks_by_browser: ClicksByDimension[]
+  clicks_by_country: ClicksByDimension[]
   total_clicks: number
   unique_visitors: number
+  vpn_clicks: number
   days: number
 }

@@ -19,6 +19,8 @@ services:
   backend:
     build:
       context: ./backend
+      args:
+        MAXMIND_LICENSE_KEY: ${MAXMIND_LICENSE_KEY:-}
     restart: unless-stopped
     ports:
       - "8001:8000"
@@ -32,6 +34,7 @@ services:
       POSTGRES_DB: champutm
       JWT_SECRET_KEY: local-dev-secret-key-change-in-production-min32
       FRONTEND_URL: http://localhost:3000
+      VPN_DETECTION_ENABLED: "true"
     depends_on:
       db:
         condition: service_healthy

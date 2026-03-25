@@ -6,14 +6,18 @@ SOLID-D: Receives IUTMLinkRepository + IClickEventRepository via __init__,
 
 from __future__ import annotations
 
+import logging
 import secrets
 import string
 from typing import Optional
 from urllib.parse import urlencode, urlparse, urlunparse, parse_qs
 from uuid import UUID
 
+import httpx
 from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger(__name__)
 
 from app.models.utm import ClickEvent, UTMLink
 from app.repositories.interfaces import IClickEventRepository, IUTMLinkRepository
@@ -21,6 +25,7 @@ from app.repositories.utm_repository import (
     PostgresClickEventRepository,
     PostgresUTMLinkRepository,
 )
+from app.core.config import settings
 from app.schemas.utm import (
     AnalyticsResponse,
     ClicksByDimension,
@@ -100,6 +105,40 @@ def _get_client_ip(request: Request) -> str:
     if forwarded_for:
         return forwarded_for.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
+
+
+# ── GeoIP + VPN helpers ────────────────────────────────────────────────────
+
+_PRIVATE_IPS = ("unknown", "127.0.0.1", "::1", "localhost")
+
+
+async def _lookup_ip_info(ip: str) -> dict | None:
+    """
+    Single ip-api.com call returning country, region, city, and VPN/proxy flag.
+    Returns None on private IPs, errors, or timeouts — always best-effort.
+    Fields: countryCode, regionName, city, proxy (bool)
+    Free tier limit: 45 req/min. Silent fail on any error.
+    """
+    if not ip or ip in _PRIVATE_IPS or ip.startswith("192.168.") or ip.startswith("10."):
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.get(
+                f"http://ip-api.com/json/{ip}",
+                params={"fields": "status,countryCode,regionName,city,proxy"},
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("status") == "success":
+                    return {
+                        "country": data.get("countryCode"),   # e.g. "US"
+                        "region": data.get("regionName"),     # e.g. "California"
+                        "city": data.get("city"),             # e.g. "San Francisco"
+                        "is_vpn": bool(data.get("proxy", False)),
+                    }
+    except Exception:
+        pass
+    return None
 
 
 # ── Service ────────────────────────────────────────────────────────────────
@@ -201,14 +240,21 @@ class UTMService:
 
         ua = request.headers.get("user-agent", "")
         referrer = request.headers.get("referer", None)
+        ip = _get_client_ip(request)
+
+        ip_info = await _lookup_ip_info(ip) if settings.vpn_detection_enabled else None
 
         event = ClickEvent(
             utm_link_id=link.id,
-            ip_address=_get_client_ip(request),
+            ip_address=ip,
             user_agent=ua or None,
             referrer=referrer,
             device_type=_detect_device_type(ua) if ua else "unknown",
             browser=_detect_browser(ua) if ua else "unknown",
+            country=ip_info["country"] if ip_info else None,
+            region=ip_info["region"] if ip_info else None,
+            city=ip_info["city"] if ip_info else None,
+            is_vpn=ip_info["is_vpn"] if ip_info else False,
         )
         await self._click_repo.create(session, event)
         # Return the full UTM-tagged URL so the redirect carries all params
@@ -233,7 +279,9 @@ class UTMService:
         clicks_by_medium_raw = await self._click_repo.get_clicks_by_medium(session, user_id, days)
         clicks_by_device_raw = await self._click_repo.get_clicks_by_device(session, user_id, days)
         clicks_by_browser_raw = await self._click_repo.get_clicks_by_browser(session, user_id, days)
+        clicks_by_country_raw = await self._click_repo.get_clicks_by_country(session, user_id, days)
         unique_visitors = await self._click_repo.count_unique_visitors(session, user_id, days)
+        vpn_clicks = await self._click_repo.count_vpn_clicks(session, user_id, days)
 
         total_clicks = sum(r["count"] for r in clicks_over_time_raw)
 
@@ -255,9 +303,14 @@ class UTMService:
                 ClicksByDimension(label=r["browser"], count=r["count"])
                 for r in clicks_by_browser_raw
             ],
+            clicks_by_country=[
+                ClicksByDimension(label=r["country"], count=r["count"])
+                for r in clicks_by_country_raw
+            ],
             total_clicks=total_clicks,
             unique_visitors=unique_visitors,
             total_links=total_links,
+            vpn_clicks=vpn_clicks,
             days=days,
         )
 
@@ -277,7 +330,9 @@ class UTMService:
         clicks_over_time_raw = await self._click_repo.get_clicks_over_time_for_link(session, link_id, days)
         clicks_by_device_raw = await self._click_repo.get_clicks_by_device_for_link(session, link_id, days)
         clicks_by_browser_raw = await self._click_repo.get_clicks_by_browser_for_link(session, link_id, days)
+        clicks_by_country_raw = await self._click_repo.get_clicks_by_country_for_link(session, link_id, days)
         unique_visitors = await self._click_repo.count_unique_visitors_for_link(session, link_id, days)
+        vpn_clicks = await self._click_repo.count_vpn_clicks_for_link(session, link_id, days)
         total_clicks = sum(r["count"] for r in clicks_over_time_raw)
 
         return LinkAnalyticsResponse(
@@ -291,8 +346,13 @@ class UTMService:
                 ClicksByDimension(label=r["browser"], count=r["count"])
                 for r in clicks_by_browser_raw
             ],
+            clicks_by_country=[
+                ClicksByDimension(label=r["country"], count=r["count"])
+                for r in clicks_by_country_raw
+            ],
             total_clicks=total_clicks,
             unique_visitors=unique_visitors,
+            vpn_clicks=vpn_clicks,
             days=days,
         )
 

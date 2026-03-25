@@ -245,3 +245,65 @@ class PostgresClickEventRepository(IClickEventRepository):
             .where(ClickEvent.ip_address.isnot(None))
         )
         return result.scalar_one()
+
+    async def get_clicks_by_country(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.country.label("country"),
+                func.count().label("count"),
+            )
+            .join(UTMLink, ClickEvent.utm_link_id == UTMLink.id)
+            .where(UTMLink.user_id == user_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.country.isnot(None))
+            .group_by(ClickEvent.country)
+            .order_by(func.count().desc())
+        )
+        return [{"country": row.country, "count": row.count} for row in result]
+
+    async def get_clicks_by_country_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.country.label("country"),
+                func.count().label("count"),
+            )
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.country.isnot(None))
+            .group_by(ClickEvent.country)
+            .order_by(func.count().desc())
+        )
+        return [{"country": row.country, "count": row.count} for row in result]
+
+    async def count_vpn_clicks(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> int:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(func.count())
+            .select_from(ClickEvent)
+            .join(UTMLink, ClickEvent.utm_link_id == UTMLink.id)
+            .where(UTMLink.user_id == user_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.is_vpn.is_(True))
+        )
+        return result.scalar_one()
+
+    async def count_vpn_clicks_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> int:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(func.count())
+            .select_from(ClickEvent)
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.is_vpn.is_(True))
+        )
+        return result.scalar_one()

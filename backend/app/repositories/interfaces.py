@@ -138,3 +138,31 @@ class IClickEventRepository(ABC):
     ) -> int:
         """Return count of distinct IP addresses for a single link."""
         ...
+
+    @abstractmethod
+    async def get_clicks_by_country(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> list[dict]:
+        """Return click counts grouped by country for all user's links."""
+        ...
+
+    @abstractmethod
+    async def get_clicks_by_country_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        """Return click counts grouped by country for a single link."""
+        ...
+
+    @abstractmethod
+    async def count_vpn_clicks(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> int:
+        """Return count of VPN/proxy clicks for all user's links."""
+        ...
+
+    @abstractmethod
+    async def count_vpn_clicks_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> int:
+        """Return count of VPN/proxy clicks for a single link."""
+        ...

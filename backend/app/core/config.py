@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     # Security
     frontend_url: str = "http://localhost:3000"  # Frontend URL for CORS
 
+    # GeoIP (MaxMind GeoLite2)
+    geoip_db_path: str = "/app/geoip/GeoLite2-City.mmdb"
+
+    # VPN detection via ip-api.com (free, best-effort)
+    vpn_detection_enabled: bool = True
+
     @property
     def postgres_url(self) -> str:
         """Build PostgreSQL async connection URL."""
