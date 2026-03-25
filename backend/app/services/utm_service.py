@@ -25,6 +25,7 @@ from app.schemas.utm import (
     AnalyticsResponse,
     ClicksByDimension,
     ClicksOverTime,
+    LinkAnalyticsResponse,
     UTMLinkCreate,
     UTMLinkListResponse,
     UTMLinkResponse,
@@ -257,6 +258,41 @@ class UTMService:
             total_clicks=total_clicks,
             unique_visitors=unique_visitors,
             total_links=total_links,
+            days=days,
+        )
+
+
+    async def get_link_analytics(
+        self, session: AsyncSession, user_id: UUID, link_id: UUID, days: int
+    ) -> LinkAnalyticsResponse:
+        from fastapi import HTTPException
+
+        link = await self._link_repo.get_by_id(session, link_id)
+        if not link or link.user_id != user_id:
+            raise HTTPException(status_code=404, detail="UTM link not found")
+
+        click_count = await self._click_repo.count_by_link(session, link.id)
+        link_response = self._to_response(link, click_count)
+
+        clicks_over_time_raw = await self._click_repo.get_clicks_over_time_for_link(session, link_id, days)
+        clicks_by_device_raw = await self._click_repo.get_clicks_by_device_for_link(session, link_id, days)
+        clicks_by_browser_raw = await self._click_repo.get_clicks_by_browser_for_link(session, link_id, days)
+        unique_visitors = await self._click_repo.count_unique_visitors_for_link(session, link_id, days)
+        total_clicks = sum(r["count"] for r in clicks_over_time_raw)
+
+        return LinkAnalyticsResponse(
+            link=link_response,
+            clicks_over_time=[ClicksOverTime(**r) for r in clicks_over_time_raw],
+            clicks_by_device=[
+                ClicksByDimension(label=r["device"], count=r["count"])
+                for r in clicks_by_device_raw
+            ],
+            clicks_by_browser=[
+                ClicksByDimension(label=r["browser"], count=r["count"])
+                for r in clicks_by_browser_raw
+            ],
+            total_clicks=total_clicks,
+            unique_visitors=unique_visitors,
             days=days,
         )
 

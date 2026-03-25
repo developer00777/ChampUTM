@@ -110,3 +110,31 @@ class IClickEventRepository(ABC):
     ) -> int:
         """Return count of distinct IP addresses across all user's links."""
         ...
+
+    @abstractmethod
+    async def get_clicks_over_time_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        """Return daily click counts for the last N days for a single link."""
+        ...
+
+    @abstractmethod
+    async def get_clicks_by_device_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        """Return click counts grouped by device_type for a single link."""
+        ...
+
+    @abstractmethod
+    async def get_clicks_by_browser_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        """Return click counts grouped by browser for a single link."""
+        ...
+
+    @abstractmethod
+    async def count_unique_visitors_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> int:
+        """Return count of distinct IP addresses for a single link."""
+        ...

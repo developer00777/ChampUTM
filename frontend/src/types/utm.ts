@@ -54,3 +54,13 @@ export interface AnalyticsData {
   total_links: number
   days: number
 }
+
+export interface LinkAnalyticsData {
+  link: UTMLink
+  clicks_over_time: ClicksOverTime[]
+  clicks_by_device: ClicksByDimension[]
+  clicks_by_browser: ClicksByDimension[]
+  total_clicks: number
+  unique_visitors: number
+  days: number
+}

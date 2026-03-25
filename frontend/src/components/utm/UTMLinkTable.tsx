@@ -1,5 +1,6 @@
-import { Trash2 } from 'lucide-react'
+import { BarChart2, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useDeleteUTMLink, useUTMLinks } from '../../hooks/useUTMLinks'
 import type { UTMLink } from '../../types/utm'
 import { EmptyState } from '../common/EmptyState'
@@ -19,6 +20,7 @@ function formatDate(dateStr: string) {
 
 function LinkRow({ link }: { link: UTMLink }) {
   const { mutate: deleteLink, isPending } = useDeleteUTMLink()
+  const navigate = useNavigate()
   const redirectUrl = `${window.location.origin}/r/${link.short_code}`
 
   return (
@@ -45,14 +47,23 @@ function LinkRow({ link }: { link: UTMLink }) {
       </td>
       <td className="px-4 py-3 text-sm text-gray-500">{formatDate(link.created_at)}</td>
       <td className="px-4 py-3 text-right">
-        <button
-          onClick={() => deleteLink(link.id)}
-          disabled={isPending}
-          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
-          title="Delete"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          <button
+            onClick={() => navigate(`/analytics/${link.id}`)}
+            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+            title="View Analytics"
+          >
+            <BarChart2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => deleteLink(link.id)}
+            disabled={isPending}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </td>
     </tr>
   )

@@ -14,6 +14,7 @@ from app.core.security import require_auth, TokenData
 from app.db.postgres import get_db_session
 from app.schemas.utm import (
     AnalyticsResponse,
+    LinkAnalyticsResponse,
     UTMLinkCreate,
     UTMLinkListResponse,
     UTMLinkResponse,
@@ -62,6 +63,17 @@ async def delete_utm_link(
 ) -> None:
     """Delete a UTM link (must be owned by current user)."""
     await utm_service.delete_link(session, UUID(current_user.user_id), link_id)
+
+
+@router.get("/links/{link_id}/analytics", response_model=LinkAnalyticsResponse)
+async def get_link_analytics(
+    link_id: UUID,
+    days: int = Query(30, ge=1, le=365),
+    session: AsyncSession = Depends(get_db_session),
+    current_user: TokenData = Depends(require_auth),
+) -> LinkAnalyticsResponse:
+    """Get analytics for a single UTM link."""
+    return await utm_service.get_link_analytics(session, UUID(current_user.user_id), link_id, days)
 
 
 @router.get("/analytics", response_model=AnalyticsResponse)

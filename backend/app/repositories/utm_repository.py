@@ -185,3 +185,63 @@ class PostgresClickEventRepository(IClickEventRepository):
             .where(ClickEvent.ip_address.isnot(None))
         )
         return result.scalar_one()
+
+    async def get_clicks_over_time_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                cast(ClickEvent.clicked_at, Date).label("date"),
+                func.count().label("count"),
+            )
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .group_by(cast(ClickEvent.clicked_at, Date))
+            .order_by(cast(ClickEvent.clicked_at, Date))
+        )
+        return [{"date": str(row.date), "count": row.count} for row in result]
+
+    async def get_clicks_by_device_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.device_type.label("device"),
+                func.count().label("count"),
+            )
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .group_by(ClickEvent.device_type)
+            .order_by(func.count().desc())
+        )
+        return [{"device": row.device or "unknown", "count": row.count} for row in result]
+
+    async def get_clicks_by_browser_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.browser.label("browser"),
+                func.count().label("count"),
+            )
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .group_by(ClickEvent.browser)
+            .order_by(func.count().desc())
+        )
+        return [{"browser": row.browser or "unknown", "count": row.count} for row in result]
+
+    async def count_unique_visitors_for_link(
+        self, session: AsyncSession, link_id: UUID, days: int
+    ) -> int:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(func.count(func.distinct(ClickEvent.ip_address)))
+            .where(ClickEvent.utm_link_id == link_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.ip_address.isnot(None))
+        )
+        return result.scalar_one()

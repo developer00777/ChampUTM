@@ -3,6 +3,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { useAuth } from './hooks/useAuth'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { LinkAnalyticsPage } from './pages/LinkAnalyticsPage'
 import { LinksPage } from './pages/LinksPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -31,6 +32,7 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="links" element={<LinksPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="analytics/:linkId" element={<LinkAnalyticsPage />} />
       </Route>
     </Routes>
   )

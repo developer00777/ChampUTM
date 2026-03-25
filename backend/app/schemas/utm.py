@@ -74,3 +74,13 @@ class AnalyticsResponse(BaseModel):
     unique_visitors: int
     total_links: int
     days: int
+
+
+class LinkAnalyticsResponse(BaseModel):
+    link: UTMLinkResponse
+    clicks_over_time: list[ClicksOverTime]
+    clicks_by_device: list[ClicksByDimension]
+    clicks_by_browser: list[ClicksByDimension]
+    total_clicks: int
+    unique_visitors: int
+    days: int
