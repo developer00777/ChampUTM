@@ -68,3 +68,10 @@ export interface LinkAnalyticsData {
   vpn_clicks: number
   days: number
 }
+
+export interface VpnFlagsData {
+  vpn_clicks: number
+  by_country: ClicksByDimension[]   // VPN exit-node country breakdown
+  by_isp: ClicksByDimension[]       // VPN provider/ISP breakdown
+  days: number
+}

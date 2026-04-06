@@ -78,6 +78,7 @@ class ClickEvent(Base):
     region: Mapped[str | None] = mapped_column(String(100), nullable=True)  # e.g. "California"
     city: Mapped[str | None] = mapped_column(String(100), nullable=True)    # e.g. "San Francisco"
     is_vpn: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False)
+    vpn_isp: Mapped[str | None] = mapped_column(String(255), nullable=True)   # ISP/org when VPN detected
     device_type: Mapped[str | None] = mapped_column(String(50), nullable=True)  # desktop/mobile/tablet/bot
     browser: Mapped[str | None] = mapped_column(String(100), nullable=True)
 

@@ -18,6 +18,7 @@ from app.schemas.utm import (
     UTMLinkCreate,
     UTMLinkListResponse,
     UTMLinkResponse,
+    VpnFlagsResponse,
 )
 from app.services.utm_service import utm_service
 
@@ -84,3 +85,13 @@ async def get_analytics(
 ) -> AnalyticsResponse:
     """Get aggregated analytics for the current user's links."""
     return await utm_service.get_analytics(session, UUID(current_user.user_id), days)
+
+
+@router.get("/vpn-flags", response_model=VpnFlagsResponse)
+async def get_vpn_flags(
+    days: int = Query(30, ge=1, le=365),
+    session: AsyncSession = Depends(get_db_session),
+    current_user: TokenData = Depends(require_auth),
+) -> VpnFlagsResponse:
+    """Get VPN/proxy flagged click breakdown by country and ISP/provider."""
+    return await utm_service.get_vpn_flags(session, UUID(current_user.user_id), days)

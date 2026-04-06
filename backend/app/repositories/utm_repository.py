@@ -307,3 +307,40 @@ class PostgresClickEventRepository(IClickEventRepository):
             .where(ClickEvent.is_vpn.is_(True))
         )
         return result.scalar_one()
+
+    async def get_vpn_clicks_by_country(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.country.label("country"),
+                func.count().label("count"),
+            )
+            .join(UTMLink, ClickEvent.utm_link_id == UTMLink.id)
+            .where(UTMLink.user_id == user_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.is_vpn.is_(True))
+            .where(ClickEvent.country.isnot(None))
+            .group_by(ClickEvent.country)
+            .order_by(func.count().desc())
+        )
+        return [{"country": row.country, "count": row.count} for row in result]
+
+    async def get_vpn_clicks_by_isp(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> list[dict]:
+        cutoff = datetime.utcnow() - timedelta(days=days)
+        result = await session.execute(
+            select(
+                ClickEvent.vpn_isp.label("isp"),
+                func.count().label("count"),
+            )
+            .join(UTMLink, ClickEvent.utm_link_id == UTMLink.id)
+            .where(UTMLink.user_id == user_id)
+            .where(ClickEvent.clicked_at >= cutoff)
+            .where(ClickEvent.is_vpn.is_(True))
+            .group_by(ClickEvent.vpn_isp)
+            .order_by(func.count().desc())
+        )
+        return [{"isp": row.isp or "Unknown Provider", "count": row.count} for row in result]

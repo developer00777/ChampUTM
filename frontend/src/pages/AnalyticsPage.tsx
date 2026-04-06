@@ -3,15 +3,17 @@ import { ClicksChart } from '../components/analytics/ClicksChart'
 import { DeviceBarChart } from '../components/analytics/DeviceBarChart'
 import { SourcePieChart } from '../components/analytics/SourcePieChart'
 import { StatCard } from '../components/analytics/StatCard'
+import { VpnFlagsPanel } from '../components/analytics/VpnFlagsPanel'
 import { ErrorAlert } from '../components/common/ErrorAlert'
 import { LoadingSpinner } from '../components/common/LoadingSpinner'
-import { useAnalytics } from '../hooks/useAnalytics'
+import { useAnalytics, useVpnFlags } from '../hooks/useAnalytics'
 
 const DAY_OPTIONS = [7, 30, 90] as const
 
 export function AnalyticsPage() {
   const [days, setDays] = useState<number>(30)
   const { data, isLoading, error } = useAnalytics(days)
+  const { data: vpnData, isLoading: vpnLoading, error: vpnError } = useVpnFlags(days)
 
   return (
     <div className="space-y-6">
@@ -87,6 +89,14 @@ export function AnalyticsPage() {
 
           {/* Country */}
           <DeviceBarChart data={data.clicks_by_country} title="By Country" />
+
+          {/* VPN Server Flagging */}
+          <VpnFlagsPanel
+            data={vpnData}
+            isLoading={vpnLoading}
+            error={vpnError}
+            totalClicks={data.total_clicks}
+          />
         </>
       )}
     </div>

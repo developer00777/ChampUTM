@@ -88,3 +88,10 @@ class LinkAnalyticsResponse(BaseModel):
     unique_visitors: int
     vpn_clicks: int
     days: int
+
+
+class VpnFlagsResponse(BaseModel):
+    vpn_clicks: int
+    by_country: list[ClicksByDimension]   # VPN clicks grouped by exit-node country
+    by_isp: list[ClicksByDimension]       # VPN clicks grouped by ISP/org (provider name)
+    days: int

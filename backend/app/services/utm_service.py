@@ -34,6 +34,7 @@ from app.schemas.utm import (
     UTMLinkCreate,
     UTMLinkListResponse,
     UTMLinkResponse,
+    VpnFlagsResponse,
 )
 
 
@@ -112,11 +113,55 @@ def _get_client_ip(request: Request) -> str:
 _PRIVATE_IPS = ("unknown", "127.0.0.1", "::1", "localhost")
 
 
+_KNOWN_VPN_KEYWORDS = (
+    "nordvpn", "expressvpn", "mullvad", "surfshark", "protonvpn", "cyberghost",
+    "ipvanish", "privateinternetaccess", "pia", "torguard", "hidemyass", "hma",
+    "purevpn", "windscribe", "hide.me", "tunnelbear", "strongvpn", "vyprvpn",
+    "astrill", "ovpn", "airvpn", "perfectprivacy", "ivpn", "azirevpn",
+)
+
+
+def _is_vpn_signal(data: dict) -> tuple[bool, str | None]:
+    """
+    Multi-signal VPN/proxy server detection.
+
+    ip-api.com signals used:
+      - proxy: HTTP proxies, known VPN exit nodes
+      - hosting: datacenter/hosting IPs (the primary signal for VPN servers)
+      - org/isp: org name keyword match against known VPN provider names
+
+    Returns (is_vpn, vpn_isp_label).
+    """
+    is_proxy = bool(data.get("proxy", False))
+    is_hosting = bool(data.get("hosting", False))
+
+    org = (data.get("org") or "").lower()
+    isp = (data.get("isp") or "").lower()
+    combined = f"{org} {isp}"
+
+    keyword_match = any(kw in combined for kw in _KNOWN_VPN_KEYWORDS)
+
+    flagged = is_proxy or is_hosting or keyword_match
+
+    # Build a human-readable ISP label only when flagged
+    isp_label: str | None = None
+    if flagged:
+        raw = data.get("org") or data.get("isp") or None
+        if raw:
+            isp_label = raw[:255]
+
+    return flagged, isp_label
+
+
 async def _lookup_ip_info(ip: str) -> dict | None:
     """
-    Single ip-api.com call returning country, region, city, and VPN/proxy flag.
-    Returns None on private IPs, errors, or timeouts — always best-effort.
-    Fields: countryCode, regionName, city, proxy (bool)
+    Single ip-api.com call returning country, region, city, VPN flag, and ISP.
+
+    Detection uses three signals:
+      1. proxy field  — web proxies + some VPN exit nodes
+      2. hosting field — datacenter IPs (the main signal for VPN servers)
+      3. org/isp keyword — matches known commercial VPN provider names
+
     Free tier limit: 45 req/min. Silent fail on any error.
     """
     if not ip or ip in _PRIVATE_IPS or ip.startswith("192.168.") or ip.startswith("10."):
@@ -125,16 +170,18 @@ async def _lookup_ip_info(ip: str) -> dict | None:
         async with httpx.AsyncClient(timeout=2.0) as client:
             resp = await client.get(
                 f"http://ip-api.com/json/{ip}",
-                params={"fields": "status,countryCode,regionName,city,proxy"},
+                params={"fields": "status,countryCode,regionName,city,proxy,hosting,org,isp"},
             )
             if resp.status_code == 200:
                 data = resp.json()
                 if data.get("status") == "success":
+                    flagged, isp_label = _is_vpn_signal(data)
                     return {
-                        "country": data.get("countryCode"),   # e.g. "US"
-                        "region": data.get("regionName"),     # e.g. "California"
-                        "city": data.get("city"),             # e.g. "San Francisco"
-                        "is_vpn": bool(data.get("proxy", False)),
+                        "country": data.get("countryCode"),
+                        "region": data.get("regionName"),
+                        "city": data.get("city"),
+                        "is_vpn": flagged,
+                        "vpn_isp": isp_label,
                     }
     except Exception:
         pass
@@ -255,6 +302,7 @@ class UTMService:
             region=ip_info["region"] if ip_info else None,
             city=ip_info["city"] if ip_info else None,
             is_vpn=ip_info["is_vpn"] if ip_info else False,
+            vpn_isp=ip_info["vpn_isp"] if ip_info else None,
         )
         await self._click_repo.create(session, event)
         # Return the full UTM-tagged URL so the redirect carries all params
@@ -353,6 +401,21 @@ class UTMService:
             total_clicks=total_clicks,
             unique_visitors=unique_visitors,
             vpn_clicks=vpn_clicks,
+            days=days,
+        )
+
+
+    async def get_vpn_flags(
+        self, session: AsyncSession, user_id: UUID, days: int
+    ) -> VpnFlagsResponse:
+        vpn_clicks = await self._click_repo.count_vpn_clicks(session, user_id, days)
+        by_country_raw = await self._click_repo.get_vpn_clicks_by_country(session, user_id, days)
+        by_isp_raw = await self._click_repo.get_vpn_clicks_by_isp(session, user_id, days)
+
+        return VpnFlagsResponse(
+            vpn_clicks=vpn_clicks,
+            by_country=[ClicksByDimension(label=r["country"], count=r["count"]) for r in by_country_raw],
+            by_isp=[ClicksByDimension(label=r["isp"], count=r["count"]) for r in by_isp_raw],
             days=days,
         )
 
