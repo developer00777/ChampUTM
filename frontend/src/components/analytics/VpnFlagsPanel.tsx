@@ -88,7 +88,7 @@ export function VpnFlagsPanel({ data, isLoading, error, totalClicks }: VpnFlagsP
                       tickFormatter={(v: string) => (v.length > 12 ? v.slice(0, 12) + '…' : v)}
                     />
                     <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} allowDecimals={false} />
-                    <Tooltip formatter={(v: number) => [v, 'VPN Clicks']} />
+                    <Tooltip formatter={(v) => [v, 'VPN Clicks']} />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                       {ispData.map((_e, i) => (
                         <Cell key={i} fill={ISP_COLORS[i % ISP_COLORS.length]} />
@@ -135,7 +135,7 @@ export function VpnFlagsPanel({ data, isLoading, error, totalClicks }: VpnFlagsP
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                     <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#9ca3af' }} />
                     <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} allowDecimals={false} />
-                    <Tooltip formatter={(v: number) => [v, 'VPN Clicks']} />
+                    <Tooltip formatter={(v) => [v, 'VPN Clicks']} />
                     <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                       {countryData.map((_e, i) => (
                         <Cell key={i} fill={COUNTRY_COLORS[i % COUNTRY_COLORS.length]} />
