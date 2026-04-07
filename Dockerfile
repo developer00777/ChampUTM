@@ -40,8 +40,8 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
-# Railway injects $PORT — patch nginx to listen on it, run migrations, then start supervisor
+# Railway injects $PORT — patch nginx to listen on it, then start supervisor
+# (alembic migrations run via supervisord alongside nginx + uvicorn)
 CMD ["/bin/sh", "-c", "\
-  sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/sites-enabled/default; \
-  alembic upgrade head || echo 'WARNING: alembic migration failed — app may not work correctly'; \
+  sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/sites-enabled/default && \
   supervisord -c /etc/supervisor/conf.d/supervisord.conf"]

@@ -2,7 +2,7 @@
 dockerfile = "Dockerfile"
 
 [deploy]
-startCommand = "/bin/sh -c \"sed -i 's/listen 80/listen ${PORT:-80}/g' /etc/nginx/sites-enabled/default && alembic upgrade head && supervisord -c /etc/supervisor/conf.d/supervisord.conf\""
+startCommand = "/bin/sh -c \"sed -i 's/listen 80/listen ${PORT:-80}/g' /etc/nginx/sites-enabled/default && supervisord -c /etc/supervisor/conf.d/supervisord.conf\""
 healthcheckPath = "/health"
 healthcheckTimeout = 120
 restartPolicyType = "on_failure"
