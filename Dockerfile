@@ -42,6 +42,6 @@ EXPOSE 80
 
 # Railway injects $PORT — patch nginx to listen on it, run migrations, then start supervisor
 CMD ["/bin/sh", "-c", "\
-  sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/sites-enabled/default && \
-  alembic upgrade head && \
+  sed -i \"s/listen 80/listen ${PORT:-80}/g\" /etc/nginx/sites-enabled/default; \
+  alembic upgrade head || echo 'WARNING: alembic migration failed — app may not work correctly'; \
   supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
